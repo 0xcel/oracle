@@ -51,17 +51,17 @@ let tx = ethers.Transaction.from(
     }
 );
 
-// signtx(tx);
+signtx(tx);
 
 
 
-// // async function signtx(unsignedtx: ethers.Transaction) {
-// //     let signedtx_serialized = await signer.signTransaction(tx);
+async function signtx(unsignedtx: ethers.Transaction) {
+    let signedtx_serialized = await signer.signTransaction(tx);
 
-// //     let signedtx = ethers.Transaction.from(signedtx_serialized)
+    let signedtx = ethers.Transaction.from(signedtx_serialized)
 
-// //     signedtx.from = "0x85f0ad9533aea4fdc870a8b93b0f7e71c018efcd"
+    // signedtx.from = "0x85f0ad9533aea4fdc870a8b93b0f7e71c018efcd"
 
-// //     console.log(signedtx)
-// // }
+    console.log(signedtx.signature)
+}
 
