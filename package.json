@@ -22,6 +22,8 @@
     "@googleapis/forms": "^2.0.0",
     "@types/node": "^18.14.4",
     "ethers": "^6.0.8",
+    "needle": "^3.2.0",
+    "twit": "^2.2.11",
     "typescript": "^4.9.5"
   },
   "devDependencies": {
