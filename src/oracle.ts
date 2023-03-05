@@ -9,7 +9,7 @@ let BearerToken = "AAAAAAAAAAAAAAAAAAAAAMuFfAEAAAAAYDTDc%2BARrFKsYA89XfYBMhz4Mv4
 const needle = require('needle');
 
 const token = BearerToken;
-
+// urls for creating stream of recent tweets
 const rulesURL = 'https://api.twitter.com/2/tweets/search/stream/rules';
 const streamURL = 'https://api.twitter.com/2/tweets/search/stream?expansions=author_id&user.fields=username';
 // filter data in stream to only be tweets w/ given hashtag
@@ -21,8 +21,10 @@ const rules = [{
 
 const node_url = 'http://0.0.0.0:8545'
 
+// mnemonic for oracle signer
 let mnemonic = ethers.Mnemonic.fromPhrase("inhale clown tiger ask machine print volcano blouse north carry pony report prosper check add autumn hope salt fold pigeon scale cushion around hint")
 let signer = ethers.HDNodeWallet.fromMnemonic(mnemonic)
+// web3 client of local node
 let eth_client = new Web3(node_url)
 
 
@@ -107,7 +109,7 @@ function streamConnect(retryAttempt : any) {
             const json = JSON.parse(data);
             let sender_username = getSender(json)
             let txData = await getTxDataIPFS(json)
-            console.log('tx data from ipfs:', txData)
+            console.log(`tx data ${txData} found for sender ${sender_username} with sender address ${addressFromUsername(sender_username)}`)
             // construct transaction according to data from ipfs
             let tx = await makeTx(txData, addressFromUsername(sender_username))
             // broadcast tx to node
@@ -169,7 +171,7 @@ async function makeTx(txData : any, sender_address : any) {
                 nonce: nonce,
                 gasPrice: ethers.parseUnits("10", "gwei"),
                 gasLimit: 21000,
-                to: addressFromUsername(txData.to),
+                to: addressFromUsernameOrHex(txData.to),
                 value: ethers.parseUnits(txData.value, "ether"),
                 chainId: 9000,
             }
@@ -192,6 +194,16 @@ async function getNonce(address : any) {
             return nonce
         }
     });
+}
+
+// get the twitter-ethereum address of the to-field of tx-data posted to IPFS
+function addressFromUsernameOrHex(addressOrUsername : any) {
+    // check if the address is formatted as hex, if so return address
+    if (addressOrUsername.substring(0, 2) == '0x' && addressOrUsername.length == 42) {
+        return addressOrUsername
+    }
+    // return address derived from user-name
+    return addressFromUsername(addressOrUsername)
 }
 
 function addressFromUsername(username : any) {
@@ -225,7 +237,6 @@ async function broadcast_tx(tx : any, address_override : any) {
     try {
         // Gets the complete list of rules currently applied to the stream
         currentRules = await getAllRules();
-        console.log('deleting current rules: ', currentRules)
         // Delete all rules. Comment the line below if you want to keep your existing rules.
         await deleteAllRules(currentRules);
 
