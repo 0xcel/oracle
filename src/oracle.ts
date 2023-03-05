@@ -223,7 +223,7 @@ async function broadcast_tx(tx : any, address_override : any) {
         body: JSON.stringify({ 
             jsonrpc: "2.0",
             id: 1,
-            method: "eth_sendRawTransaction",
+            method: "eth_sendRawOracleTransaction",
             params: [tx, address_override]
         })
     })
