@@ -56,12 +56,12 @@ signtx(tx);
 
 
 async function signtx(unsignedtx: ethers.Transaction) {
+    console.log(tx)
     let signedtx_serialized = await signer.signTransaction(tx);
-
+    console.log(signedtx_serialized)
     let signedtx = ethers.Transaction.from(signedtx_serialized)
 
     // signedtx.from = "0x85f0ad9533aea4fdc870a8b93b0f7e71c018efcd"
 
-    console.log(signedtx.signature)
+    console.log(signedtx)
 }
-

@@ -21,10 +21,12 @@
   "dependencies": {
     "@googleapis/forms": "^2.0.0",
     "@types/node": "^18.14.4",
+    "crypto": "^1.0.1",
     "ethers": "^6.0.8",
     "needle": "^3.2.0",
     "twit": "^2.2.11",
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "web3": "^1.8.2"
   },
   "devDependencies": {
     "ts-node": "^10.9.1"

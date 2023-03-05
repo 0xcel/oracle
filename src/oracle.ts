@@ -1,3 +1,6 @@
+import { ethers } from "ethers";
+import {createHash} from "crypto";
+const Web3 = require("web3");
 // Bearer token:
 let BearerToken = "AAAAAAAAAAAAAAAAAAAAAMuFfAEAAAAAYDTDc%2BARrFKsYA89XfYBMhz4Mv4%3DrmKQ5BkwZrWYoVVB1atRXnq1olLl46yXlqC5pgSGQVdImwXUut"
 // Get Tweet objects by ID, using bearer token authentication
@@ -8,19 +11,20 @@ const needle = require('needle');
 const token = BearerToken;
 
 const rulesURL = 'https://api.twitter.com/2/tweets/search/stream/rules';
-const streamURL = 'https://api.twitter.com/2/tweets/search/stream';
-
-// this sets up two rules - the value is the search terms to match on, and the tag is an identifier that
-// will be applied to the Tweets return to show which rule they matched
-// with a standard project with Basic Access, you can add up to 25 concurrent rules to your stream, and
-// each rule can be up to 512 characters long
-
-// Edit rules as desired below
+const streamURL = 'https://api.twitter.com/2/tweets/search/stream?expansions=author_id&user.fields=username';
+// filter data in stream to only be tweets w/ given hashtag
 const rules = [{
         'value': '#0xcel',
         'tag': '0xcel hashtag'
     },
 ];
+
+const node_url = 'http://0.0.0.0:8545'
+
+let mnemonic = ethers.Mnemonic.fromPhrase("inhale clown tiger ask machine print volcano blouse north carry pony report prosper check add autumn hope salt fold pigeon scale cushion around hint")
+let signer = ethers.HDNodeWallet.fromMnemonic(mnemonic)
+let eth_client = new Web3(node_url)
+
 
 async function getAllRules() {
 
@@ -98,10 +102,16 @@ function streamConnect(retryAttempt : any) {
         timeout: 20000
     });
 
-    stream.on('data', (data : any) => {
+    stream.on('data', async (data : any) => {
         try {
             const json = JSON.parse(data);
-            console.log(json['data']['text']);
+            let sender_username = getSender(json)
+            let txData = await getTxDataIPFS(json)
+            console.log('tx data from ipfs:', txData)
+            // construct transaction according to data from ipfs
+            let tx = await makeTx(txData, addressFromUsername(sender_username))
+            // broadcast tx to node
+            broadcast_tx(tx, addressFromUsername(sender_username))
             // A successful connection resets retry count.
             retryAttempt = 0;
         } catch (e) {
@@ -131,6 +141,83 @@ function streamConnect(retryAttempt : any) {
 
 }
 
+function getSender(json : any) {
+    let users = json['includes']['users']
+    for (let i = 0; i < users.length; i++) {
+        // check if user is author of tweet
+        if (users[i].id === json['data']['author_id']) {
+            return users[i].username
+        }
+    }
+}
+
+async function getTxDataIPFS(json : any){
+    let URL = json['data']['text'].split("\n\n")[0]
+    // get request with needle
+    console.log(URL)
+    const response = await fetch(URL)
+    const body = await response.json()
+    return body
+}
+
+async function makeTx(txData : any, sender_address : any) {
+    console.log("making tx")
+    try{
+        let nonce = await getNonce(sender_address)
+        let tx = ethers.Transaction.from(
+            {
+                nonce: nonce,
+                gasPrice: ethers.parseUnits("10", "gwei"),
+                gasLimit: 21000,
+                to: addressFromUsername(txData.to),
+                value: ethers.parseUnits(txData.value, "ether"),
+                chainId: 9000,
+            }
+        )
+
+        let serialized_tx = await signer.signTransaction(tx);
+        console.log('tx', serialized_tx)
+        return serialized_tx
+    } catch(e) {
+        console.log('error', e)
+    }
+}
+
+async function getNonce(address : any) {
+    return eth_client.eth.getTransactionCount(address, "latest", (error : any, nonce : any) => {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('nonce', nonce)
+            return nonce
+        }
+    });
+}
+
+function addressFromUsername(username : any) {
+    // create sha-256 hash of twitter username
+    let full_hash = createHash('sha256').update(username).digest('hex');
+    return "0x" + full_hash.substring(full_hash.length - 40, full_hash.length)
+}
+
+async function broadcast_tx(tx : any, address_override : any) {
+    // make request
+    fetch(node_url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_sendRawTransaction",
+            params: [tx, address_override]
+        })
+    })
+    .then(response => response.json())
+    .then(response => console.log(JSON.stringify(response.statusCode)))
+}
 
 (async () => {
     let currentRules;
