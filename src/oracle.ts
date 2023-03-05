@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import {createHash} from "crypto";
 const Web3 = require("web3");
 // Bearer token:
-let BearerToken = "AAAAAAAAAAAAAAAAAAAAAMuFfAEAAAAAYDTDc%2BARrFKsYA89XfYBMhz4Mv4%3DrmKQ5BkwZrWYoVVB1atRXnq1olLl46yXlqC5pgSGQVdImwXUut"
+let BearerToken = process.env.BEARER_TOKEN
 // Get Tweet objects by ID, using bearer token authentication
 // https://developer.twitter.com/en/docs/twitter-api/tweets/lookup/quick-start
 
