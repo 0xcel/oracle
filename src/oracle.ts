@@ -108,7 +108,7 @@ function streamConnect(retryAttempt : any) {
         try {
             const json = JSON.parse(data);
             let sender_username = getSender(json)
-            let txData = await getTxDataIPFS(json)
+            let txData = await getTxDataTwitter(json)
             console.log(`tx data ${txData} found for sender ${sender_username} with sender address ${addressFromUsername(sender_username)}`)
             // construct transaction according to data from ipfs
             let tx = await makeTx(txData, addressFromUsername(sender_username))
@@ -151,6 +151,12 @@ function getSender(json : any) {
             return users[i].username
         }
     }
+}
+
+function getTxDataTwitter(json : any) {
+    let ipfsJSON = json['data']['text'].split("\n\n")[0]
+    console.log(ipfsJSON)
+    return JSON.parse(ipfsJSON)
 }
 
 async function getTxDataIPFS(json : any){
